@@ -2,11 +2,11 @@ import React, { useState, useEffect } from 'react'
 import Filter from './Filter'
 import PersonForm from './PersonForm'
 import Persons from './Persons'
+import Notification from './Notification'
 import phoneService from './services/comms'
 import './App.css'
 
 const App = () => {
-
   const [ persons, setPersons ] = useState([])
   const [ newName, setNewName ] = useState('')
   const [ newNumber, setNewNumber ] = useState('')
@@ -29,7 +29,11 @@ const App = () => {
       phoneService.update(id, changedPerson)
         .then(changedPerson => {
             setPersons(persons.map(p => p.id !== id ? p : changedPerson))
+            console.log('Updated')
+            showMessage(`${person.name} has been updated in the phonebook`)
+            console.log(person)
         })
+        .catch(error => showMessage(error.response.data.error, false))
     }
   }
 
@@ -47,16 +51,21 @@ const App = () => {
       else {
         const pers = persons.find(p => p.name === newName)
         updatePerson(pers.id, newNumber)
-        showMessage(`${person.name} has been updated in the phonebook`)
       }
     }
     else if (newName === '' || newNumber === '') {
         showMessage('The fields should not be empty', false)
     }
     else {
-      phoneService.create(person)
-        .then(retPerson => setPersons(persons.concat(retPerson)))
-        showMessage(`${person.name} was added to the phonebook`)
+      phoneService
+        .create(person)
+        .then(retPerson => {
+          setPersons(persons.concat(retPerson))
+          showMessage(`${person.name} was added to the phonebook`)
+        })
+        .catch(error => {
+          showMessage(error.response.data.error, false)
+        })
     }
 
     setNewName('')
@@ -84,23 +93,8 @@ const showMessage = (message, success = true) => {
 
   setTimeout(() => {
     setErrorMessage(null)
+    setSuccess(null)
   }, 3000)
-}
-
-const Notification = ( {message, success} ) => {
-  if (message === null) {
-    return null
-  }
-  if (success) {
-    return (
-    <div className="success">{message}</div>
-    )
-  }
-  else {
-    return(
-      <div className="error">{message}</div>
-    )
-  }
 }
 
 const handleNameChange = (event) => setNewName(event.target.value)
